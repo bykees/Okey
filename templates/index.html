@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>HadiOkey</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link rel="icon" type="image/png" href="../static/img/HadiOkeyLogo.png" />
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  </head>
+  <body>
+    <!-- Üst başlık + oda rozeti -->
+    <header class="oda-baslik">
+      <img
+        id="logo"
+        src="../static/img/Gemini_Generated_Image_wca44qwca44qwca4.png"
+        alt="HadiOkeyLogo"
+      />
+      <div id="odaRozeti" class="oda-rozeti hidden">
+        <span id="masaYazi">Masa: —</span>
+        <button id="kopyalaButon" type="button">Kopyala</button>
+      </div>
+    </header>
+
+    <!-- Lobi -->
+    <div id="anaMenu">
+      <input id="kullaniciAdi" placeholder="Kullanıcı adın" />
+      <button id="isimDegistirButon" type="button">İsmi Değiştir</button>
+      <button id="masaOlusturButon" type="button">Masa Oluştur</button>
+      <!--  <select id="oyunModu">
+      <option value="duz">Düz Okey</option>
+      <option value="101">101 Okey</option>
+      <option value="tay">Tay</option>
+    </select> -->
+    </div>
+
+    <div id="katilAlani">
+      <input id="masaKodu" placeholder="Masa kodu (ör: OK1234)" />
+      <button id="katilButon" type="button">Katıl</button>
+    </div>
+
+    <section id="aktifMasalar" style="max-width: 940px; margin: 8px auto 10px">
+      <h3 style="margin: 10px 0 6px">Aktif Masalar</h3>
+      <button id="yenileButon" type="button" style="margin-top: 8px">
+        Yenile
+      </button>
+      <div id="masalarIzgara"></div>
+    </section>
+
+    <!-- Oyun Alanı -->
+    <div id="oyunAlani" class="hidden">
+      <!-- Kontroller -->
+      <div id="kontroller">
+        <button id="oyunuBaslatButon" class="hidden" type="button">
+          Oyunu Başlat
+        </button>
+        <button id="bitirButon" class="hidden" type="button">Bitir</button>
+        <button id="masadanAyrilButon" class="hidden" type="button">
+          Masadan Ayrıl
+        </button>
+      </div>
+
+      <!-- Bilgi Paneli -->
+      <div id="bilgiPaneli" class="bilgi-paneli hidden">
+        <h2>HadiOkey Odası</h2>
+        <p>Masa kodunu paylaşarak arkadaşlarını davet et!</p>
+
+        <div class="bilgi-istatistikleri">
+          <div class="istatistikSatiri">
+            <span>Oyuncular:</span>
+            <strong id="katilanSayisiMetin">1/4</strong>
+          </div>
+
+          <!-- SOL TARAF: Oyun kuralları -->
+          <div id="kurallarKutusu" class="cam-kutu">
+            <div class="kutu-baslik">📜 Oyun Kuralları</div>
+            <div class="kurallar-icerik">
+              <p><strong>Klasik Okey</strong></p>
+              <ul>
+                <li>Oyun maksimum 4 oyuncu ile oynanır.</li>
+                <li>
+                  Her oyuncu oyuna <strong>14 taş</strong> ile başlar. Oyuna ilk
+                  başlayan oyuncu <strong>15 taş</strong> alır.
+                </li>
+                <li>
+                  Her turda oyuncu sırası geldiğinde:
+                  <ul>
+                    <li>Ya ortadaki desteden <strong>1 taş çeker</strong>,</li>
+                    <li>
+                      Ya da bir önceki oyuncunun attığı
+                      <strong>son taşı yerden alır</strong>.
+                    </li>
+                  </ul>
+                </li>
+                <li>
+                  Taş aldıktan sonra oyuncu elinden mutlaka
+                  <strong>1 taş atmak</strong> zorundadır.
+                </li>
+                <li>
+                  Oyunun amacı; eldeki taşları <strong>seri</strong> (aynı
+                  renkte ardışık sayılar) ve <strong>per</strong> (aynı sayılı
+                  farklı renkler) hâlinde düzenleyerek geçerli bir el oluşturmak
+                  ve oyunu bitirmektir.
+                </li>
+                <li>
+                  Geçerli bir bitiş için oyuncunun elinde toplam
+                  <strong>14 taş</strong> kalmalı ve tüm taşlar kurallara uygun
+                  per/seri oluşturmalıdır.
+                </li>
+              </ul>
+
+              <p><strong>Taş Tipleri</strong></p>
+              <ul>
+                <li>
+                  <strong>Renkler:</strong> Kırmızı (K), Mavi (M), Siyah (S),
+                  Sarı (Y).
+                </li>
+                <li>
+                  <strong>Numaralar:</strong> Her renkte 1’den 13’e kadar taşlar
+                  bulunur.
+                </li>
+                <li>Her taş destede <strong>iki adet</strong> bulunur.</li>
+                <li>
+                  <strong>Gösterge Taşı:</strong> Oyun başında açılan göstergeye
+                  göre bir sonraki sayıdaki taş <strong>okey</strong> olur.
+                </li>
+                <li>
+                  <strong>Okey Taşı:</strong> Herhangi bir taşın yerine
+                  geçebilen özel taştır.
+                </li>
+                <li>
+                  <strong>Sahte Okey (✦):</strong> Gerçek okey taşının
+                  <em>değeriyle aynı</em> sayılır, ancak okey gibi her taşın
+                  yerine geçmez.
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="istatistikSatiri">
+            <span>Oyun Modu</span>
+            <strong id="oyunModuEtiketi">Klasik</strong>
+          </div>
+        </div>
+
+        <div id="botKontrolleri" class="bot-kontrolleri hidden">
+          <button id="botEkleButon" type="button">+ Bot Ekle</button>
+          <button id="botKaldirButon" type="button">- Bot Kaldır</button>
+        </div>
+
+        <div class="yukleme-cubugu"><div></div></div>
+        <p class="bekleme-yazisi">
+          Diğer oyuncular bekleniyor<span class="uc-nokta"></span>
+        </p>
+      </div>
+      <div id="gameOverPanel" class="hidden">
+        <div class="game-over-box">
+          <h2 id="gameOverTitle">Kazanan:</h2>
+          <p id="gameOverWinner"></p>
+          <button id="gameOverClose">Tamam</button>
+        </div>
+      </div>
+
+      <!-- DİKDÖRTGEN MASA -->
+      <div id="masaAlani" class="hidden">
+        <div class="masa-dikdortgen">
+          <!-- SIRA + TIMER ŞERİDİ -->
+          <div id="turnInfoStrip">
+            <div id="turnIndicator" class="turn-indicator hidden">Sıra: —</div>
+            <div id="turnTimerBar">
+              <div id="turnTimerFill"></div>
+            </div>
+          </div>
+
+          <!-- Üst -->
+          <div class="koltuk ust">
+            <div class="avatar" id="koltuk-ust-avatar">👤</div>
+            <div class="isim" id="koltuk-ust-isim">—</div>
+          </div>
+
+          <!-- Sağ -->
+          <div class="koltuk sag">
+            <div class="avatar" id="koltuk-sag-avatar">👤</div>
+            <div class="isim" id="koltuk-sag-isim">—</div>
+          </div>
+
+          <!-- Sol -->
+          <div class="koltuk sol">
+            <div class="avatar" id="koltuk-sol-avatar">👤</div>
+            <div class="isim" id="koltuk-sol-isim">—</div>
+          </div>
+
+          <!-- ORTA ALAN: desteden çek -->
+          <div id="centerArea">
+            <div
+              id="ortaDeste"
+              class="orta-deste"
+              title="Sıra sendeyken tıkla, taş çek"
+            ></div>
+            <div id="okeyGosterge" class="okey-gosterge">
+              <div id="indicatorTileUI" class="tas indicator hidden"></div>
+              <div class="okey-label">Gösterge</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAŞ ATMA SLOT’LARI -->
+        <div id="discardSlots">
+          <div
+            class="discard-slot discard-ust-sol"
+            title="Taş atmak için sürükleyip bırak"
+          ></div>
+          <div
+            class="discard-slot discard-ust-sag"
+            title="Taş atmak için sürükleyip bırak"
+          ></div>
+          <div
+            class="discard-slot discard-alt-sol"
+            title="Taş atmak için sürükleyip bırak"
+          ></div>
+          <div
+            class="discard-slot discard-alt-sag"
+            title="Taş atmak için sürükleyip bırak"
+          ></div>
+        </div>
+
+        <!-- Oyuncu ıstakası -->
+        <div id="istakaAlani" class="hidden">
+          <div id="istakaTaslari"></div>
+        </div>
+      </div>
+
+      <!-- SOL ÜST: Oyuncular kutusu + butonu -->
+      <button
+        id="oyuncularTusu"
+        aria-expanded="false"
+        title="Oyuncuları gizle/göster"
+      >
+        👥
+      </button>
+      <div id="oyuncularKutusu" class="cam-kutu hiddenToggle">
+        <div class="kutu-baslik">👥 Oyuncular</div>
+        <ul id="oyuncularListesi"></ul>
+      </div>
+
+      <!-- SAĞ ÜST: Sohbet -->
+      <div id="sohbetKutusu" class="hiddenToggle">
+        <div id="sohbetMesajlari"></div>
+        <div id="sohbetGirdi">
+          <input id="mesajInput" placeholder="Mesaj yaz..." />
+          <button id="mesajGonderButon" type="button">Gönder</button>
+        </div>
+      </div>
+      <button
+        id="sohbetToggleButon"
+        type="button"
+        aria-expanded="true"
+        title="Sohbeti gizle/göster"
+      >
+        💬
+      </button>
+    </div>
+
+    <footer>
+      <p>
+        © 2025 <strong>HadiOkey</strong> — Hüseyin Taylan tarafından
+        geliştirilmiştir.
+      </p>
+    </footer>
+    <!-- 🔥 MODALLAR EN SONA, body’nin İÇİNDE AMA HİÇBİR KUTUNUN DIŞINDA -->
+    <!-- ... tüm sayfa içeriği ... -->
+
+    <div id="uiMessagePanel" class="hidden">
+      <div class="msg-backdrop">
+        <div class="msg-dialog">
+          <h2 id="uiMsgTitle"></h2>
+          <p id="uiMsgText"></p>
+          <button id="uiMsgClose">Tamam</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONFIRM MODAL -->
+    <div id="uiConfirmPanel" class="hidden">
+      <div class="confirm-backdrop">
+        <div class="confirm-dialog">
+          <h2 id="uiConfirmTitle"></h2>
+          <p id="uiConfirmText"></p>
+          <div class="confirm-buttons">
+            <button id="uiConfirmCancel">İptal</button>
+            <button id="uiConfirmOk">Tamam</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='core.js') }}"></script>
+    <script src="{{ url_for('static', filename='lobby.js') }}"></script>
+    <script src="{{ url_for('static', filename='game.js') }}"></script>
+  </body>
+</html>
