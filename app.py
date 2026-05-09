@@ -842,8 +842,9 @@ def get_rooms():
     emit('rooms_list', {'rooms': serialize_rooms()})
 
 
-if __name__ == '__main__':
-    socketio.run(app, debug=True)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    socketio.run(app, host="0.0.0.0", port=port)
 
 
 def save_match_result(room_code, winner_nick, reason, mode, players):
