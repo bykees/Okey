@@ -1,2 +1,7 @@
 flask
 flask-socketio
+eventlet
+gunicorn
+mysql-connector-python
+python-socketio
+python-engineio
