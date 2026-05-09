@@ -835,7 +835,9 @@ def on_disconnect():
 
     emit_rooms_update()
 
-
+@app.route("/")
+def home():
+    return "Okey server aktif"
 
 # -------- Aktif Masalar --------
 @socketio.on('get_rooms')
