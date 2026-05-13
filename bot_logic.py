@@ -26,7 +26,7 @@ def handle_bot_turn(socketio, code, bot_nickname):
     if room.get("current_turn") != bot_nickname:
         return
 
-    socketio.sleep(random.randint(10, 15))
+    socketio.sleep(random.randint(6, 15))
 
     room = rooms.get(code)
     if not room or not room.get("started"):

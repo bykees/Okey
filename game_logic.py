@@ -218,7 +218,7 @@ def _can_finish_with_pairs(counts: Counter, jokers: int) -> bool:
     - jokers: okey joker adedi (tek taşları tamamlar)
     """
     counts = _remove_zeros(counts)
-    if sum(counts.values()) + jokers != 14:
+    if sum(counts.values()) + jokers not in (14, 15):
         return False
 
     singles = sum(v % 2 for v in counts.values())
@@ -231,14 +231,9 @@ def _can_finish_with_pairs(counts: Counter, jokers: int) -> bool:
 
 
 def is_valid_win_hand(hand, okey_tile=None) -> bool:
-    """
-    - Gerçek taş sayısı = 14 olmalı (0 hariç).
-    - okey_tile ile aynı taş => joker (wildcard).
-    - SJ1/SJ2 joker DEĞİL: okey_tile'in DEĞERİ gibi normal taş sayılır.
-    - 12-13-1 wrap için: 1'leri 1 veya 14 sayıp dener.
-    """
     real_tiles = [t for t in hand if t != "0"]
-    if len(real_tiles) != 14:
+
+    if len(real_tiles) not in (14, 15):
         return False
 
     jokers = 0

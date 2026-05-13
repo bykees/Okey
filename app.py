@@ -207,11 +207,30 @@ def add_bot(data):
         emit('error', {'msg': 'Masa dolu.'})
         return
 
-    bot_no = 1
-    while f"BOT_{bot_no}" in room["players"]:
-        bot_no += 1
+    BOT_NAMES = [
+        "BOT_Hasan",
+        "BOT_Hüseyin",
+        "BOT_Ahmet",
+        "BOT_Mehmet",
+        "BOT_Ali",
+        "BOT_Veli",
+        "BOT_Murat",
+        "BOT_Emre",
+        "BOT_Kaan",
+        "BOT_Can"
+    ]
 
-    bot_name = f"BOT_{bot_no}"
+    used_names = set(room["players"])
+
+    available_names = [
+        name for name in BOT_NAMES
+        if name not in used_names
+    ]
+
+    if available_names:
+        bot_name = random.choice(available_names)
+    else:
+        bot_name = f"BOT_{random.randint(1000,9999)}"
     room["players"].append(bot_name)
 
     socketio.emit('update_players', {'players': room['players']}, room=code)
@@ -623,12 +642,6 @@ def finish_hand(data):
     real_tiles = [t for t in hand if t != "0"]
 
     if not is_valid_win_hand(hand, room.get('okey_tile')):
-        if len(real_tiles) > 14:
-            emit('error', {
-                'msg': '15 taş ile bitemezsin. Fazla taşı atıp tekrar dene.'
-            })
-            return
-
         emit('error', {
             'msg': 'Bu elde perler tam olmadığı için bitiremezsin.'
         })
@@ -637,7 +650,10 @@ def finish_hand(data):
     try:
         save_match_result(room, code, nick, reason="win")
     except Exception as e:
-        print("DB SAVE ERROR:", e)
+        import traceback
+        print("DB SAVE ERROR TYPE:", type(e))
+        print("DB SAVE ERROR REPR:", repr(e))
+        traceback.print_exc()
 
     room['started'] = False
     room['current_turn'] = None
@@ -848,18 +864,3 @@ def get_rooms():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     socketio.run(app, host="0.0.0.0", port=port)
-
-
-def save_match_result(room_code, winner_nick, reason, mode, players):
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute(
-        """
-        INSERT INTO match_results (room_code, winner_nick, reason, mode, players_json)
-        VALUES (%s, %s, %s, %s, %s)
-        """,
-        (room_code, winner_nick, reason, mode, json.dumps(players))
-    )
-    cur.close()
-    conn.close()
-    
